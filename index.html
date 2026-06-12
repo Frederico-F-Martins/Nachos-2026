@@ -1,178 +1,332 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="pt">
+
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Ranking Mundial</title>
+<title>🏆 Ranking Mundial</title>
 
 <style>
+
+*{
+    box-sizing:border-box;
+}
+
 body{
-    font-family: Arial,sans-serif;
-    background:#0f172a;
+    margin:0;
+    padding:20px;
+    font-family:Arial, Helvetica, sans-serif;
+    background:#0b3d0b;
     color:white;
     max-width:900px;
     margin:auto;
-    padding:20px;
 }
 
 h1{
     text-align:center;
+    margin-bottom:30px;
+}
+
+h2{
+    margin-top:30px;
 }
 
 input{
     width:100%;
-    padding:12px;
-    margin-bottom:20px;
-    border-radius:8px;
+    padding:14px;
     border:none;
+    border-radius:12px;
+    font-size:16px;
+}
+
+#suggestions{
+    margin-top:8px;
+}
+
+.suggestion{
+    background:#1e293b;
+    padding:12px;
+    margin-bottom:4px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.suggestion:hover{
+    background:#334155;
 }
 
 .card{
-    background:#1e293b;
-    padding:15px;
+    background:#111827;
+    border-radius:16px;
+    padding:16px;
     margin-bottom:12px;
-    border-radius:12px;
 }
 
 .rank{
-    font-size:24px;
+    font-size:20px;
     font-weight:bold;
 }
 
-.balls{
-    margin-top:10px;
-    font-size:20px;
+.points{
+    margin-top:8px;
+    opacity:0.9;
 }
 
 .progress{
-    background:#334155;
-    height:10px;
-    border-radius:10px;
+    height:12px;
+    background:#374151;
+    border-radius:999px;
     overflow:hidden;
-    margin-top:10px;
+    margin-top:12px;
 }
 
 .progress-bar{
     height:100%;
     background:gold;
 }
+
+.balls{
+    margin-top:12px;
+    font-size:22px;
+    line-height:1.5;
+    word-break:break-word;
+}
+
+.top3-card{
+    background:#111827;
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:10px;
+}
+
+.gold{
+    border-left:6px solid gold;
+}
+
+.silver{
+    border-left:6px solid silver;
+}
+
+.bronze{
+    border-left:6px solid #cd7f32;
+}
+
+.small{
+    font-size:14px;
+    opacity:0.8;
+}
+
 </style>
 
 </head>
+
 <body>
 
-<h1>🏆 Nachos 2026</h1>
+<h1>🏆 Nachos 2026 </h1>
 
 <input
-id="search"
-placeholder="Procurar participante..."
+    id="search"
+    placeholder="🔍 Procurar participante..."
 >
 
+<div id="suggestions"></div>
+
+<h2>🥇 Top 3</h2>
+<div id="top3"></div>
+
+<h2>📋 Classificação</h2>
 <div id="ranking"></div>
 
 <script>
 
-const CSV_URL =
-https://docs.google.com/spreadsheets/d/e/2PACX-1vTPMzLuvcc9fW2cOSz2-23833J6509-cLn1IQ1he0sOwgrG0JfH82OUVHIMkEXvP7Y6ZODodzURt9JR/pub?gid=0&single=true&output=csv;
+// COLOCA AQUI O URL CSV DA GOOGLE SHEET
 
-let players=[];
+const CSV_URL =
+"https://COLE_AQUI_O_TEU_LINK.csv";
+
+let players = [];
 
 async function loadData(){
 
-    const response=await fetch(CSV_URL);
-    const text=await response.text();
+    const response = await fetch(CSV_URL);
+    const text = await response.text();
 
-    const rows=text.trim().split("\n");
+    const rows = text.trim().split("\n");
 
-    players=rows
-      .slice(1)
-      .map(row=>{
+    players = rows
+        .slice(1)
+        .map(row=>{
 
-        const [nome,pontos]=row.split(",");
+            const cols = row.split(",");
 
-        return{
-            nome,
-            pontos:Number(pontos)
-        };
-      });
+            return{
+                nome: cols[0]?.trim(),
+                pontos: Number(cols[1])
+            };
+        })
+        .filter(p=>p.nome);
+
+    render();
+}
+
+function footballs(points){
+
+    const count = Math.floor(points/5);
+
+    return "⚽".repeat(Math.min(count,40));
+}
+
+function selectPlayer(nome){
+
+    document.getElementById("search").value = nome;
 
     render();
 }
 
 function render(){
 
-    const search=
-    document
-    .getElementById("search")
-    .value
-    .toLowerCase();
+    const search =
+        document
+        .getElementById("search")
+        .value
+        .trim()
+        .toLowerCase();
 
-    const ranking=
-    document.getElementById("ranking");
+    const ranking =
+        document.getElementById("ranking");
 
-    const sorted=
-    [...players]
-    .sort((a,b)=>b.pontos-a.pontos);
+    const top3 =
+        document.getElementById("top3");
 
-    const leader=
-    sorted[0]?.pontos || 1;
+    const suggestions =
+        document.getElementById("suggestions");
 
-    ranking.innerHTML="";
+    ranking.innerHTML = "";
+    top3.innerHTML = "";
+    suggestions.innerHTML = "";
+
+    const sorted =
+        [...players]
+        .sort((a,b)=>b.pontos-a.pontos);
+
+    const leader =
+        sorted[0]?.pontos || 1;
+
+    // TOP 3
 
     sorted
-    .filter(p=>
-        p.nome.toLowerCase().includes(search)
-    )
-    .forEach((p,index)=>{
+        .slice(0,3)
+        .forEach((p,index)=>{
 
-        const balls=
-        "⚽".repeat(
-            Math.floor(p.pontos/5)
+            const medal =
+                index===0 ? "🥇" :
+                index===1 ? "🥈" :
+                "🥉";
+
+            const css =
+                index===0 ? "gold" :
+                index===1 ? "silver" :
+                "bronze";
+
+            top3.innerHTML += `
+                <div class="top3-card ${css}">
+                    <div class="rank">
+                        ${medal} ${p.nome}
+                    </div>
+
+                    <div class="points">
+                        ${p.pontos} pontos
+                    </div>
+                </div>
+            `;
+        });
+
+    // SUGESTÕES
+
+    if(search.length > 0){
+
+        const matches =
+            sorted
+            .filter(p =>
+                p.nome
+                .toLowerCase()
+                .startsWith(search)
+            )
+            .slice(0,5);
+
+        matches.forEach(p=>{
+
+            suggestions.innerHTML += `
+                <div
+                    class="suggestion"
+                    onclick="selectPlayer('${p.nome}')"
+                >
+                    ${p.nome}
+                </div>
+            `;
+        });
+    }
+
+    // RESULTADOS
+
+    const results =
+        search.length === 0
+        ? sorted
+        : sorted.filter(p =>
+            p.nome
+            .toLowerCase()
+            .includes(search)
         );
 
-        const percent=
-        (p.pontos/leader)*100;
+    results.forEach((p,index)=>{
 
-        const medal=
-            index===0 ? "🥇" :
-            index===1 ? "🥈" :
-            index===2 ? "🥉" :
-            `#${index+1}`;
+        const percent =
+            (p.pontos / leader) * 100;
 
         ranking.innerHTML += `
-        <div class="card">
+            <div class="card">
 
-            <div class="rank">
-                ${medal}
-                ${p.nome}
-            </div>
-
-            <div>
-                ${p.pontos} pontos
-            </div>
-
-            <div class="balls">
-                ${balls}
-            </div>
-
-            <div class="progress">
-                <div
-                class="progress-bar"
-                style="width:${percent}%">
+                <div class="rank">
+                    #${sorted.findIndex(x=>x.nome===p.nome)+1}
+                    •
+                    ${p.nome}
                 </div>
-            </div>
 
-        </div>
+                <div class="points">
+                    ${p.pontos} pontos
+                </div>
+
+                <div class="balls">
+                    ${footballs(p.pontos)}
+                </div>
+
+                <div class="small">
+                    1 ⚽ = 5 pontos
+                </div>
+
+                <div class="progress">
+                    <div
+                        class="progress-bar"
+                        style="width:${percent}%">
+                    </div>
+                </div>
+
+            </div>
         `;
     });
 }
 
 document
 .getElementById("search")
-.addEventListener("input",render);
+.addEventListener("input", render);
 
 loadData();
+
+// Atualiza automaticamente de 60 em 60 segundos
+
+setInterval(loadData, 60000);
 
 </script>
 
