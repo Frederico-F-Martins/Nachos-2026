@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Ranking Mundial</title>
+
+<style>
+body{
+    font-family: Arial,sans-serif;
+    background:#0f172a;
+    color:white;
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+}
+
+h1{
+    text-align:center;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-bottom:20px;
+    border-radius:8px;
+    border:none;
+}
+
+.card{
+    background:#1e293b;
+    padding:15px;
+    margin-bottom:12px;
+    border-radius:12px;
+}
+
+.rank{
+    font-size:24px;
+    font-weight:bold;
+}
+
+.balls{
+    margin-top:10px;
+    font-size:20px;
+}
+
+.progress{
+    background:#334155;
+    height:10px;
+    border-radius:10px;
+    overflow:hidden;
+    margin-top:10px;
+}
+
+.progress-bar{
+    height:100%;
+    background:gold;
+}
+</style>
+
+</head>
+<body>
+
+<h1>🏆 Nachos 2026</h1>
+
+<input
+id="search"
+placeholder="Procurar participante..."
+>
+
+<div id="ranking"></div>
+
+<script>
+
+const CSV_URL =
+https://docs.google.com/spreadsheets/d/e/2PACX-1vTPMzLuvcc9fW2cOSz2-23833J6509-cLn1IQ1he0sOwgrG0JfH82OUVHIMkEXvP7Y6ZODodzURt9JR/pub?gid=0&single=true&output=csv;
+
+let players=[];
+
+async function loadData(){
+
+    const response=await fetch(CSV_URL);
+    const text=await response.text();
+
+    const rows=text.trim().split("\n");
+
+    players=rows
+      .slice(1)
+      .map(row=>{
+
+        const [nome,pontos]=row.split(",");
+
+        return{
+            nome,
+            pontos:Number(pontos)
+        };
+      });
+
+    render();
+}
+
+function render(){
+
+    const search=
+    document
+    .getElementById("search")
+    .value
+    .toLowerCase();
+
+    const ranking=
+    document.getElementById("ranking");
+
+    const sorted=
+    [...players]
+    .sort((a,b)=>b.pontos-a.pontos);
+
+    const leader=
+    sorted[0]?.pontos || 1;
+
+    ranking.innerHTML="";
+
+    sorted
+    .filter(p=>
+        p.nome.toLowerCase().includes(search)
+    )
+    .forEach((p,index)=>{
+
+        const balls=
+        "⚽".repeat(
+            Math.floor(p.pontos/5)
+        );
+
+        const percent=
+        (p.pontos/leader)*100;
+
+        const medal=
+            index===0 ? "🥇" :
+            index===1 ? "🥈" :
+            index===2 ? "🥉" :
+            `#${index+1}`;
+
+        ranking.innerHTML += `
+        <div class="card">
+
+            <div class="rank">
+                ${medal}
+                ${p.nome}
+            </div>
+
+            <div>
+                ${p.pontos} pontos
+            </div>
+
+            <div class="balls">
+                ${balls}
+            </div>
+
+            <div class="progress">
+                <div
+                class="progress-bar"
+                style="width:${percent}%">
+                </div>
+            </div>
+
+        </div>
+        `;
+    });
+}
+
+document
+.getElementById("search")
+.addEventListener("input",render);
+
+loadData();
+
+</script>
+
+</body>
+</html>
